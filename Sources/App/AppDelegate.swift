@@ -1,0 +1,29 @@
+import AppKit
+import Carbon.HIToolbox
+import ServiceManagement
+
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    private let index = AppIndex()
+    private lazy var search = SearchController(index: index)
+    private var hotKey: HotKey?
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        index.start()
+        search.prepare()
+        hotKey = HotKey(keyCode: kVK_Space, modifiers: cmdKey) { [weak self] in self?.search.toggle() }
+        if hotKey == nil { NSLog("Blink: couldn't register ⌘Space") }
+        registerLoginItemOnce()
+    }
+
+    // Only once, so turning it off in System Settings sticks.
+    private func registerLoginItemOnce() {
+        let key = "registeredLoginItem"
+        guard Bundle.main.bundlePath.hasPrefix("/Applications/"), !UserDefaults.standard.bool(forKey: key) else { return }
+        do {
+            try SMAppService.mainApp.register()
+            UserDefaults.standard.set(true, forKey: key)
+        } catch {
+            NSLog("Blink: couldn't add login item: \(error)")
+        }
+    }
+}
