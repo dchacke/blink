@@ -64,23 +64,26 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
             content.addSubview(row)
         }
 
+        let blur = NSVisualEffectView()
+        blur.material = .popover
+        blur.state = .active
+        blur.wantsLayer = true
+        blur.layer?.cornerRadius = 16
+        blur.layer?.masksToBounds = true
+        panel.contentView = blur
+
         if #available(macOS 26, *) {
             // Regular glass frosts over as the panel grows with results;
-            // clear glass looks the same at any size.
+            // clear glass looks the same at any size. The blur under it keeps
+            // text behind the panel from competing with the query.
             let glass = NSGlassEffectView()
             glass.style = .clear
             glass.cornerRadius = 16
             glass.contentView = content
-            panel.contentView = glass
+            glass.autoresizingMask = [.width, .height]
+            blur.addSubview(glass)
         } else {
-            let effect = NSVisualEffectView()
-            effect.material = .popover
-            effect.state = .active
-            effect.wantsLayer = true
-            effect.layer?.cornerRadius = 16
-            effect.layer?.masksToBounds = true
-            effect.addSubview(content)
-            panel.contentView = effect
+            blur.addSubview(content)
         }
     }
 
