@@ -31,14 +31,28 @@ The whole app is 216 KB.
 
 1. Turn off Spotlight’s shortcut: System Settings → Keyboard → Keyboard
    Shortcuts… → Spotlight → uncheck “Show Spotlight search”.
-2. Build and install (needs the Xcode command line tools):
+2. Download the .dmg from the
+   [latest release](https://github.com/dchacke/blink/releases/latest), open
+   it and drag Blink to Applications.
+3. Open Blink. It isn’t notarized by Apple, so macOS blocks it the first
+   time: click Done, then go to System Settings → Privacy & Security and
+   click Open Anyway.
 
-   ```
-   make install
-   ```
+Or build and install it yourself (needs the Xcode command line tools):
+
+```
+make install
+```
 
 Blink adds itself as a login item on first launch from /Applications. To quit
 it, run `pkill -x Blink`.
+
+Each release’s .dmg comes with a GPG signature. To check it:
+
+```
+curl -s https://github.com/dchacke.gpg | gpg --import
+gpg --verify Blink-<version>.dmg.asc
+```
 
 ## Develop
 
@@ -46,4 +60,5 @@ it, run `pkill -x Blink`.
 make test
 make bench
 make app   # builds build/Blink.app
+make dmg   # builds build/Blink-<version>.dmg for Apple silicon and Intel
 ```

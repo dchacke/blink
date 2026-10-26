@@ -10,7 +10,10 @@ TESTS := $(wildcard Tests/*.swift)
 
 BUNDLE := build/Blink.app
 
-.PHONY: app test bench install clean
+VERSION := $(shell /usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Info.plist)
+DMG     := build/Blink-$(VERSION).dmg
+
+.PHONY: app dmg test bench install clean
 
 app: $(BUNDLE)
 
@@ -19,6 +22,24 @@ $(BUNDLE): $(CORE) $(APP) Info.plist
 	cp Info.plist $@/Contents/
 	$(SWIFTC) $(FLAGS) -O -module-name Blink $(CORE) $(APP) -o $@/Contents/MacOS/Blink
 	codesign --force --sign - $@
+
+dmg: $(DMG)
+
+# For releases: one app for both Apple silicon and Intel Macs, next to a link
+# to /Applications to drag it to.
+$(DMG): $(CORE) $(APP) Info.plist
+	rm -rf build/dmg
+	mkdir -p build/dmg/Blink.app/Contents/MacOS
+	cp Info.plist build/dmg/Blink.app/Contents/
+	for arch in arm64 x86_64; do \
+		$(SWIFTC) -target $$arch-apple-macos14.0 -module-cache-path build/module-cache -O \
+			-module-name Blink $(CORE) $(APP) -o build/dmg/Blink-$$arch || exit 1; \
+	done
+	lipo -create build/dmg/Blink-arm64 build/dmg/Blink-x86_64 -output build/dmg/Blink.app/Contents/MacOS/Blink
+	rm build/dmg/Blink-arm64 build/dmg/Blink-x86_64
+	codesign --force --sign - build/dmg/Blink.app
+	ln -s /Applications build/dmg/Applications
+	hdiutil create -volname Blink -srcfolder build/dmg -ov -format UDZO $@
 
 test: build/tests
 	build/tests
