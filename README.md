@@ -25,7 +25,7 @@ apps installed:
 | Search, 2 or more letters | 0.03–0.05 ms |
 | Math, `sqrt(2) * (3 + 4)^2 / pi` | 0.006 ms |
 
-The whole app is 216 KB.
+The whole app is 1 MB, 848 KB of which is its icon.
 
 ## Install
 

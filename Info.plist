@@ -4,6 +4,8 @@
 <dict>
 	<key>CFBundleExecutable</key>
 	<string>Blink</string>
+	<key>CFBundleIconFile</key>
+	<string>Blink</string>
 	<key>CFBundleIdentifier</key>
 	<string>local.Blink</string>
 	<key>CFBundleName</key>

@@ -17,9 +17,10 @@ DMG     := build/Blink-$(VERSION).dmg
 
 app: $(BUNDLE)
 
-$(BUNDLE): $(CORE) $(APP) Info.plist
-	mkdir -p $@/Contents/MacOS
+$(BUNDLE): $(CORE) $(APP) Info.plist assets/Blink.icns
+	mkdir -p $@/Contents/MacOS $@/Contents/Resources
 	cp Info.plist $@/Contents/
+	cp assets/Blink.icns $@/Contents/Resources/
 	$(SWIFTC) $(FLAGS) -O -module-name Blink $(CORE) $(APP) -o $@/Contents/MacOS/Blink
 	codesign --force --sign - $@
 
@@ -27,10 +28,11 @@ dmg: $(DMG)
 
 # For releases: one app for both Apple silicon and Intel Macs, next to a link
 # to /Applications to drag it to.
-$(DMG): $(CORE) $(APP) Info.plist
+$(DMG): $(CORE) $(APP) Info.plist assets/Blink.icns
 	rm -rf build/dmg
-	mkdir -p build/dmg/Blink.app/Contents/MacOS
+	mkdir -p build/dmg/Blink.app/Contents/MacOS build/dmg/Blink.app/Contents/Resources
 	cp Info.plist build/dmg/Blink.app/Contents/
+	cp assets/Blink.icns build/dmg/Blink.app/Contents/Resources/
 	for arch in arm64 x86_64; do \
 		$(SWIFTC) -target $$arch-apple-macos14.0 -module-cache-path build/module-cache -O \
 			-module-name Blink $(CORE) $(APP) -o build/dmg/Blink-$$arch || exit 1; \
