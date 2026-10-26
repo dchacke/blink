@@ -106,9 +106,10 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) }
             ?? NSScreen.main ?? NSScreen.screens[0]
         let visible = screen.visibleFrame
+        // Where Spotlight opens.
         topLeft = NSPoint(
             x: visible.midX - Self.width / 2,
-            y: visible.maxY - visible.height * 0.22
+            y: visible.maxY - (visible.height * 0.2844).rounded()
         )
         field.stringValue = ""
         update()
