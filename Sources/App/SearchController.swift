@@ -14,6 +14,7 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
     private static let rowHeight: CGFloat = 44
     private static let inset: CGFloat = 8
     private static let maxResults = 8
+    private static let cornerRadius: CGFloat = 16
 
     private let index: AppIndex
     private let panel = Panel(
@@ -80,8 +81,11 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         blur.material = .popover
         blur.state = .active
         blur.wantsLayer = true
-        blur.layer?.cornerRadius = 16
+        blur.layer?.cornerRadius = Self.cornerRadius
         blur.layer?.masksToBounds = true
+        // The layer's corner radius doesn't round the blur of what's behind
+        // the window, only a mask does.
+        blur.maskImage = Self.roundedMask()
         panel.contentView = blur
 
         if #available(macOS 26, *) {
@@ -90,13 +94,24 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
             // text behind the panel from competing with the query.
             let glass = NSGlassEffectView()
             glass.style = .clear
-            glass.cornerRadius = 16
+            glass.cornerRadius = Self.cornerRadius
             glass.contentView = content
             glass.autoresizingMask = [.width, .height]
             blur.addSubview(glass)
         } else {
             blur.addSubview(content)
         }
+    }
+
+    private static func roundedMask() -> NSImage {
+        let r = cornerRadius
+        let mask = NSImage(size: NSSize(width: 2 * r + 1, height: 2 * r + 1), flipped: false) {
+            NSBezierPath(roundedRect: $0, xRadius: r, yRadius: r).fill()
+            return true
+        }
+        mask.capInsets = NSEdgeInsets(top: r, left: r, bottom: r, right: r)
+        mask.resizingMode = .stretch
+        return mask
     }
 
     func toggle() {
