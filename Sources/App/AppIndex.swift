@@ -8,6 +8,17 @@ struct App {
     // Settings" is found under either name in other languages.
     let keys: [SearchKey]
 
+    init(url: URL) {
+        var name = FileManager.default.displayName(atPath: url.path)
+        if name.hasSuffix(".app") { name.removeLast(4) }
+        let icon = NSWorkspace.shared.icon(forFile: url.path)
+        icon.size = NSSize(width: 32, height: 32)
+        self.name = name
+        self.url = url
+        self.icon = icon
+        keys = Set([name, url.deletingPathExtension().lastPathComponent]).map(SearchKey.init)
+    }
+
     func match(_ query: SearchQuery) -> Match? {
         keys.compactMap { $0.match(query) }.max()
     }
@@ -16,11 +27,14 @@ struct App {
 /// The apps in the Applications folders, rescanned whenever they change, and
 /// how often each was opened from Blink, for ranking.
 final class AppIndex {
-    private static let directories = ["/Applications", "/System/Applications", NSHomeDirectory() + "/Applications"]
+    private static let directories = [
+        "/Applications", "/System/Applications", NSHomeDirectory() + "/Applications",
+    ]
     private static let launchesKey = "launches"
 
     private(set) var apps: [App] = []
-    private var launches = UserDefaults.standard.dictionary(forKey: launchesKey) as? [String: Int] ?? [:]
+    private var launches =
+        UserDefaults.standard.dictionary(forKey: launchesKey) as? [String: Int] ?? [:]
     private var stream: FSEventStreamRef?
 
     func start() {
@@ -34,7 +48,8 @@ final class AppIndex {
             .compactMap { app in app.match(query).map { (app, $0) } }
             .sorted { a, b in
                 if a.1.tier != b.1.tier { return a.1.tier.rawValue > b.1.tier.rawValue }
-                let launchesA = launches[a.0.url.path, default: 0], launchesB = launches[b.0.url.path, default: 0]
+                let launchesA = launches[a.0.url.path, default: 0]
+                let launchesB = launches[b.0.url.path, default: 0]
                 if launchesA != launchesB { return launchesA > launchesB }
                 if a.1.penalty != b.1.penalty { return a.1.penalty < b.1.penalty }
                 return a.0.name.localizedStandardCompare(b.0.name) == .orderedAscending
@@ -66,28 +81,32 @@ final class AppIndex {
     // Descends into plain folders like Utilities, but not into app bundles.
     // Skips dotfiles only: Safari's symlink in /Applications is flagged hidden.
     private static func collect(_ directory: URL, depth: Int, into apps: inout [App]) {
-        let entries = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isDirectoryKey])) ?? []
+        let entries = (try? FileManager.default.contentsOfDirectory(
+            at: directory, includingPropertiesForKeys: [.isDirectoryKey]
+        )) ?? []
         for url in entries where !url.lastPathComponent.hasPrefix(".") {
+            let values = try? url.resourceValues(forKeys: [.isDirectoryKey])
             if url.pathExtension == "app" {
-                var name = FileManager.default.displayName(atPath: url.path)
-                if name.hasSuffix(".app") { name.removeLast(4) }
-                let fileName = url.deletingPathExtension().lastPathComponent
-                let icon = NSWorkspace.shared.icon(forFile: url.path)
-                icon.size = NSSize(width: 32, height: 32)
-                let keys = name == fileName ? [SearchKey(name)] : [SearchKey(name), SearchKey(fileName)]
-                apps.append(App(name: name, url: url, icon: icon, keys: keys))
-            } else if depth < 2, (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+                apps.append(App(url: url))
+            } else if depth < 2, values?.isDirectory == true {
                 collect(url, depth: depth + 1, into: &apps)
             }
         }
     }
 
     private func watch() {
-        var context = FSEventStreamContext(version: 0, info: Unmanaged.passUnretained(self).toOpaque(), retain: nil, release: nil, copyDescription: nil)
+        var context = FSEventStreamContext(
+            version: 0, info: Unmanaged.passUnretained(self).toOpaque(),
+            retain: nil, release: nil, copyDescription: nil
+        )
         let callback: FSEventStreamCallback = { _, info, _, _, _, _ in
             Unmanaged<AppIndex>.fromOpaque(info!).takeUnretainedValue().reload()
         }
-        guard let stream = FSEventStreamCreate(nil, callback, &context, Self.directories as CFArray, FSEventStreamEventId(kFSEventStreamEventIdSinceNow), 1, FSEventStreamCreateFlags(kFSEventStreamCreateFlagNone)) else { return }
+        guard let stream = FSEventStreamCreate(
+            nil, callback, &context, Self.directories as CFArray,
+            FSEventStreamEventId(kFSEventStreamEventIdSinceNow), 1,
+            FSEventStreamCreateFlags(kFSEventStreamCreateFlagNone)
+        ) else { return }
         FSEventStreamSetDispatchQueue(stream, .main)
         FSEventStreamStart(stream)
         self.stream = stream

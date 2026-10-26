@@ -10,7 +10,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         index.start()
         search.prepare()
-        hotKey = HotKey(keyCode: kVK_Space, modifiers: cmdKey) { [weak self] in self?.search.toggle() }
+        hotKey = HotKey(keyCode: kVK_Space, modifiers: cmdKey) { [weak self] in
+            self?.search.toggle()
+        }
         if hotKey == nil { NSLog("Blink: couldn't register ⌘Space") }
         registerLoginItemOnce()
     }
@@ -18,7 +20,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // Only once, so turning it off in System Settings sticks.
     private func registerLoginItemOnce() {
         let key = "registeredLoginItem"
-        guard Bundle.main.bundlePath.hasPrefix("/Applications/"), !UserDefaults.standard.bool(forKey: key) else { return }
+        let installed = Bundle.main.bundlePath.hasPrefix("/Applications/")
+        guard installed, !UserDefaults.standard.bool(forKey: key) else { return }
         do {
             try SMAppService.mainApp.register()
             UserDefaults.standard.set(true, forKey: key)

@@ -24,7 +24,7 @@ struct SearchKey {
         wordStarts = original.indices.filter { i in
             if i == 0 { return true }
             let previous = original[i - 1], current = original[i]
-            let startsWord = !(previous.isLetter || previous.isNumber) && (current.isLetter || current.isNumber)
+            let startsWord = !isAlphanumeric(previous) && isAlphanumeric(current)
             let startsCamelCaseWord = current.isUppercase && previous.isLowercase
             return startsWord || startsCamelCaseWord
         }
@@ -37,12 +37,7 @@ struct SearchKey {
     func match(_ query: SearchQuery) -> Match? {
         let q = query.chars
         guard !q.isEmpty, q.count <= chars.count else { return nil }
-        let extra = chars.count - q.count
-
-        if chars.starts(with: q) { return Match(tier: .prefix, penalty: extra) }
-        if wordStarts.contains(where: { matches(q, at: $0) }) { return Match(tier: .wordPrefix, penalty: extra) }
-        if wordStarts.map({ chars[$0] }).starts(with: q) { return Match(tier: .initials, penalty: extra) }
-        if chars.indices.contains(where: { matches(q, at: $0) }) { return Match(tier: .substring, penalty: extra) }
+        if let tier = exactTier(q) { return Match(tier: tier, penalty: chars.count - q.count) }
 
         // Fuzzy: the query's letters appear in order, penalized by the gaps.
         let letters = q.filter { $0 != " " }
@@ -54,6 +49,15 @@ struct SearchKey {
         }
         guard found == letters.count else { return nil }
         return Match(tier: .fuzzy, penalty: last - first + 1 - letters.count)
+    }
+
+    // The best tier in which the query appears as is.
+    private func exactTier(_ q: [Character]) -> Match.Tier? {
+        if chars.starts(with: q) { return .prefix }
+        if wordStarts.contains(where: { matches(q, at: $0) }) { return .wordPrefix }
+        if wordStarts.map({ chars[$0] }).starts(with: q) { return .initials }
+        if chars.indices.contains(where: { matches(q, at: $0) }) { return .substring }
+        return nil
     }
 
     private func matches(_ q: [Character], at start: Int) -> Bool {
@@ -72,4 +76,8 @@ struct SearchQuery {
 
 private func fold(_ c: Character) -> Character {
     String(c).folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).first ?? c
+}
+
+private func isAlphanumeric(_ c: Character) -> Bool {
+    c.isLetter || c.isNumber
 }

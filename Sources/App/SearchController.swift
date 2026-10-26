@@ -16,7 +16,12 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
     private static let maxResults = 8
 
     private let index: AppIndex
-    private let panel = Panel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+    private let panel = Panel(
+        contentRect: .zero,
+        styleMask: [.borderless, .nonactivatingPanel],
+        backing: .buffered,
+        defer: false
+    )
     private let field = NSTextField()
     private let separator = NSBox()
     private var rows: [ResultRow] = []
@@ -58,7 +63,12 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         content.addSubview(separator)
 
         for i in 0..<Self.maxResults {
-            let row = ResultRow(frame: NSRect(x: Self.inset, y: Self.fieldHeight + Self.inset + CGFloat(i) * Self.rowHeight, width: Self.width - 2 * Self.inset, height: Self.rowHeight))
+            let row = ResultRow(frame: NSRect(
+                x: Self.inset,
+                y: Self.fieldHeight + Self.inset + CGFloat(i) * Self.rowHeight,
+                width: Self.width - 2 * Self.inset,
+                height: Self.rowHeight
+            ))
             row.onClick = { [weak self] in self?.activate(i) }
             rows.append(row)
             content.addSubview(row)
@@ -93,9 +103,13 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
 
     private func show() {
         let mouse = NSEvent.mouseLocation
-        let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main ?? NSScreen.screens[0]
+        let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) }
+            ?? NSScreen.main ?? NSScreen.screens[0]
         let visible = screen.visibleFrame
-        topLeft = NSPoint(x: visible.midX - Self.width / 2, y: visible.maxY - visible.height * 0.22)
+        topLeft = NSPoint(
+            x: visible.midX - Self.width / 2,
+            y: visible.maxY - visible.height * 0.22
+        )
         field.stringValue = ""
         update()
         panel.makeKeyAndOrderFront(nil)
@@ -126,8 +140,10 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         }
 
         separator.isHidden = results.isEmpty
-        let height = Self.fieldHeight + (results.isEmpty ? 0 : 2 * Self.inset + CGFloat(results.count) * Self.rowHeight)
-        panel.setFrame(NSRect(x: topLeft.x, y: topLeft.y - height, width: Self.width, height: height), display: true)
+        var height = Self.fieldHeight
+        if !results.isEmpty { height += 2 * Self.inset + CGFloat(results.count) * Self.rowHeight }
+        let frame = NSRect(x: topLeft.x, y: topLeft.y - height, width: Self.width, height: height)
+        panel.setFrame(frame, display: true)
         panel.invalidateShadow()
     }
 
@@ -147,7 +163,8 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
             NSPasteboard.general.setString(value, forType: .string)
         case .app(let app):
             index.recordLaunch(of: app)
-            NSWorkspace.shared.openApplication(at: app.url, configuration: NSWorkspace.OpenConfiguration())
+            let configuration = NSWorkspace.OpenConfiguration()
+            NSWorkspace.shared.openApplication(at: app.url, configuration: configuration)
         }
     }
 
@@ -155,7 +172,9 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         update()
     }
 
-    func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+    func control(
+        _ control: NSControl, textView: NSTextView, doCommandBy selector: Selector
+    ) -> Bool {
         switch selector {
         case #selector(NSResponder.moveDown(_:)): select(selection + 1)
         case #selector(NSResponder.moveUp(_:)): select(selection - 1)
@@ -176,7 +195,12 @@ private final class Panel: NSPanel {
 
     // Blink has no menu bar, which normally provides these shortcuts.
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        let actions = ["x": #selector(NSText.cut(_:)), "c": #selector(NSText.copy(_:)), "v": #selector(NSText.paste(_:)), "a": #selector(NSText.selectAll(_:))]
+        let actions = [
+            "x": #selector(NSText.cut(_:)),
+            "c": #selector(NSText.copy(_:)),
+            "v": #selector(NSText.paste(_:)),
+            "a": #selector(NSText.selectAll(_:)),
+        ]
         if event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
            let action = event.charactersIgnoringModifiers.flatMap({ actions[$0] }),
            NSApp.sendAction(action, to: nil, from: self) {
@@ -191,8 +215,10 @@ private final class FlippedView: NSView {
 }
 
 private final class ResultRow: NSView {
-    static let calculatorIcon = NSImage(systemSymbolName: "equal.circle.fill", accessibilityDescription: "Result")!
-        .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 26, weight: .regular))!
+    static let calculatorIcon = NSImage(
+        systemSymbolName: "equal.circle.fill",
+        accessibilityDescription: "Result"
+    )!.withSymbolConfiguration(.init(pointSize: 26, weight: .regular))!
 
     var onClick: (() -> Void)?
     var isSelected = false {
@@ -210,9 +236,9 @@ private final class ResultRow: NSView {
         super.init(frame: frame)
         wantsLayer = true
         layer?.cornerRadius = 8
-        icon.frame = NSRect(x: 8, y: (frame.height - 32) / 2, width: 32, height: 32)
+        icon.frame = NSRect(x: 8, y: bounds.midY - 16, width: 32, height: 32)
         icon.imageScaling = .scaleProportionallyUpOrDown
-        title.frame = NSRect(x: 50, y: (frame.height - 22) / 2, width: frame.width - 60, height: 22)
+        title.frame = NSRect(x: 50, y: bounds.midY - 11, width: bounds.width - 60, height: 22)
         title.font = .systemFont(ofSize: 17)
         title.lineBreakMode = .byTruncatingTail
         addSubview(icon)

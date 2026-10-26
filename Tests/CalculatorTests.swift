@@ -33,14 +33,17 @@ import Testing
     // Anything that isn't arithmetic must yield nil so app search isn't
     // cluttered: plain words, lone numbers or constants, malformed input,
     // and non-finite results.
-    @Test(arguments: ["", "safari", "5", "-5", "pi", "e", "2+", "(1+2", "1+2)", "1/0", "sqrt(-1)", "foo(2)", "2 3"])
+    @Test(arguments: [
+        "", "safari", "5", "-5", "pi", "e",
+        "2+", "(1+2", "1+2)", "1/0", "sqrt(-1)", "foo(2)", "2 3",
+    ])
     func rejects(input: String) {
         #expect(Calculator.evaluate(input) == nil)
     }
 
     @Test(arguments: [
         (0.1 + 0.2, "0.3"),
-        (1.0 / 3, "0.3333333333"),
+        (.pi, "3.1415926536"),
         (42, "42"),
         (-4, "-4"),
         (2.5, "2.5"),

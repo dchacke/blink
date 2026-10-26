@@ -8,7 +8,9 @@ enum Calculator {
     static func evaluate(_ input: String) -> Double? {
         guard let tokens = tokenize(input) else { return nil }
         var parser = Parser(tokens: tokens)
-        guard let value = try? parser.parse(), parser.sawOperation, value.isFinite else { return nil }
+        guard let value = try? parser.parse(), parser.sawOperation, value.isFinite else {
+            return nil
+        }
         return value
     }
 
@@ -41,40 +43,37 @@ enum Calculator {
 
     private static let constants: [String: Double] = ["pi": .pi, "π": .pi, "e": M_E]
 
+    private static let aliases: [Character: Character] = ["−": "-", "×": "*", "÷": "/"]
+
     private static func tokenize(_ input: String) -> [Token]? {
-        let chars = Array(input)
+        let chars = Array(input.replacingOccurrences(of: "**", with: "^"))
         var tokens: [Token] = []
         var i = 0
         while i < chars.count {
-            let c = chars[i]
+            let c = aliases[chars[i]] ?? chars[i]
             if c.isWhitespace {
                 i += 1
-            } else if c.isASCII && (c.isNumber || c == ".") {
-                var j = i
-                while j < chars.count, chars[j].isASCII, chars[j].isNumber || chars[j] == "." { j += 1 }
-                guard let value = Double(String(chars[i..<j])) else { return nil }
+            } else if isNumeric(c) {
+                let end = chars[i...].firstIndex { !isNumeric($0) } ?? chars.count
+                guard let value = Double(String(chars[i..<end])) else { return nil }
                 tokens.append(.number(value))
-                i = j
+                i = end
             } else if c.isLetter {
-                var j = i
-                while j < chars.count, chars[j].isLetter || chars[j].isNumber { j += 1 }
-                tokens.append(.name(String(chars[i..<j]).lowercased()))
-                i = j
-            } else {
-                switch c {
-                case "*" where i + 1 < chars.count && chars[i + 1] == "*":
-                    tokens.append(.symbol("^"))
-                    i += 1
-                case "+", "-", "*", "/", "%", "^", "(", ")": tokens.append(.symbol(c))
-                case "−": tokens.append(.symbol("-"))
-                case "×": tokens.append(.symbol("*"))
-                case "÷": tokens.append(.symbol("/"))
-                default: return nil
-                }
+                let end = chars[i...].firstIndex { !($0.isLetter || $0.isNumber) } ?? chars.count
+                tokens.append(.name(String(chars[i..<end]).lowercased()))
+                i = end
+            } else if "+-*/%^()".contains(c) {
+                tokens.append(.symbol(c))
                 i += 1
+            } else {
+                return nil
             }
         }
         return tokens
+    }
+
+    private static func isNumeric(_ c: Character) -> Bool {
+        c.isASCII && (c.isNumber || c == ".")
     }
 
     // Precedence, loosest first: + -, then * / %, then unary minus, then ^
@@ -141,13 +140,7 @@ enum Calculator {
                 guard take(oneOf: ")") != nil else { throw ParseError() }
                 return value
             case .name(let name):
-                if take(oneOf: "(") != nil {
-                    guard let function = functions[name] else { throw ParseError() }
-                    let argument = try sum()
-                    guard take(oneOf: ")") != nil else { throw ParseError() }
-                    sawOperation = true
-                    return function(argument)
-                }
+                if take(oneOf: "(") != nil { return try call(name) }
                 guard let value = constants[name] else { throw ParseError() }
                 return value
             default:
@@ -155,8 +148,17 @@ enum Calculator {
             }
         }
 
+        private mutating func call(_ name: String) throws -> Double {
+            guard let function = functions[name] else { throw ParseError() }
+            let argument = try sum()
+            guard take(oneOf: ")") != nil else { throw ParseError() }
+            sawOperation = true
+            return function(argument)
+        }
+
         private mutating func take(oneOf symbols: String) -> Character? {
-            guard position < tokens.count, case .symbol(let c) = tokens[position], symbols.contains(c) else { return nil }
+            guard position < tokens.count else { return nil }
+            guard case .symbol(let c) = tokens[position], symbols.contains(c) else { return nil }
             position += 1
             return c
         }
