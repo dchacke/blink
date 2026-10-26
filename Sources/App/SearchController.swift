@@ -10,7 +10,7 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
     }
 
     private static let width: CGFloat = 640
-    private static let fieldHeight: CGFloat = 56
+    private static let fieldHeight: CGFloat = 57
     private static let rowHeight: CGFloat = 44
     private static let inset: CGFloat = 8
     private static let maxResults = 8
@@ -47,7 +47,9 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         let content = FlippedView()
         content.autoresizingMask = [.width, .height]
 
-        field.frame = NSRect(x: 18, y: 13, width: Self.width - 36, height: 30)
+        field.frame = NSRect(
+            x: 18, y: (Self.fieldHeight - 30) / 2, width: Self.width - 36, height: 30
+        )
         field.font = .systemFont(ofSize: 24)
         field.placeholderString = "Search apps or do math"
         field.isBordered = false
