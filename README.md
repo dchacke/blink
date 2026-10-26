@@ -1,7 +1,7 @@
 # Blink
 
-A fast Spotlight replacement that does two things: open apps from the
-Applications folders and do math. Press ⌘Space, type, hit Return.
+A blazing-fast Spotlight replacement that does two things: open apps from
+the Applications folder and do math. Press ⌘Space, type, hit Return.
 
 - Apps are matched by prefix, word start (“notes” → Sticky Notes), initials
   (“vsc” → Visual Studio Code), substring, then fuzzily. Apps you open often
