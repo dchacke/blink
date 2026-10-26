@@ -48,12 +48,17 @@ final class AppIndex {
         UserDefaults.standard.set(launches, forKey: Self.launchesKey)
     }
 
+    static func scan() -> [App] {
+        var apps: [App] = []
+        for directory in directories {
+            collect(URL(fileURLWithPath: directory), depth: 0, into: &apps)
+        }
+        return apps
+    }
+
     private func reload() {
         DispatchQueue.global(qos: .userInitiated).async {
-            var apps: [App] = []
-            for directory in Self.directories {
-                Self.collect(URL(fileURLWithPath: directory), depth: 0, into: &apps)
-            }
+            let apps = Self.scan()
             DispatchQueue.main.async { self.apps = apps }
         }
     }

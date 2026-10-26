@@ -10,7 +10,7 @@ TESTS := $(wildcard Tests/*.swift)
 
 BUNDLE := build/Blink.app
 
-.PHONY: app test install clean
+.PHONY: app test bench install clean
 
 app: $(BUNDLE)
 
@@ -29,6 +29,13 @@ build/tests: $(CORE) $(TESTS)
 		-F $(TESTING) -plugin-path $(TOOLCHAIN)/lib/swift/host/plugins/testing \
 		-Xlinker -rpath -Xlinker $(TESTING) -Xlinker -rpath -Xlinker $(TESTING)/../usr/lib -Xlinker -rpath -Xlinker $(TESTING)/../../usr/lib \
 		$(CORE) $(TESTS) -o $@
+
+bench: build/bench
+	build/bench
+
+build/bench: $(CORE) Sources/App/AppIndex.swift Bench/main.swift
+	mkdir -p build
+	$(SWIFTC) $(FLAGS) -O -module-name BlinkBench $^ -o $@
 
 install: app
 	pkill -x Blink || true
