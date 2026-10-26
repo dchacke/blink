@@ -65,7 +65,10 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         }
 
         if #available(macOS 26, *) {
+            // Regular glass frosts over as the panel grows with results;
+            // clear glass looks the same at any size.
             let glass = NSGlassEffectView()
+            glass.style = .clear
             glass.cornerRadius = 16
             glass.contentView = content
             panel.contentView = glass
