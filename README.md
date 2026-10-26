@@ -25,6 +25,13 @@ apps installed:
 | Search, 2 or more letters | 0.03–0.05 ms |
 | Math, `sqrt(2) * (3 + 4)^2 / pi` | 0.006 ms |
 
+From keystroke to results on screen, measured frame by frame in 60 fps
+screen recordings, Spotlight took 167–1,083 ms and Blink under 17 ms, within
+a single frame.
+
+All of these were measured on the repo owner’s Mac. Results on yours may
+vary.
+
 The whole app is 1 MB, 848 KB of which is its icon.
 
 ## Install
