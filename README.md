@@ -37,6 +37,9 @@ The whole app is 1 MB, 848 KB of which is its icon.
 3. Open Blink. It isn’t notarized by Apple, so macOS blocks it the first
    time: click Done, then go to System Settings → Privacy & Security and
    click Open Anyway.
+4. That’s it. Blink runs in the background, with no window, Dock icon or
+   menu bar icon, and it doesn’t show up in the ⌘Tab switcher. It quietly
+   takes over ⌘Space from Spotlight.
 
 Or build and install it yourself (needs the Xcode command line tools):
 
