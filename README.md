@@ -1,3 +1,5 @@
+![Blink](assets/banner.svg)
+
 # Blink
 
 A blazing-fast Spotlight replacement that does two things: open apps from
