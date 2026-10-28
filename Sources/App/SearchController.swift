@@ -7,6 +7,7 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
     private enum Result {
         case calculation(String)
         case app(App)
+        case file(FoundFile)
     }
 
     private static let width: CGFloat = 640
@@ -17,6 +18,8 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
     private static let cornerRadius: CGFloat = 16
 
     private let index: AppIndex
+    private let files: FileIndex
+    private let icons = NSCache<NSString, NSImage>()
     private let panel = Panel(
         contentRect: .zero,
         styleMask: [.borderless, .nonactivatingPanel],
@@ -30,8 +33,9 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
     private var selection = 0
     private var topLeft = NSPoint.zero
 
-    init(index: AppIndex) {
+    init(index: AppIndex, files: FileIndex) {
         self.index = index
+        self.files = files
         super.init()
     }
 
@@ -52,7 +56,7 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
             x: 18, y: (Self.fieldHeight - 30) / 2, width: Self.width - 36, height: 30
         )
         field.font = .systemFont(ofSize: 24)
-        field.placeholderString = "Search apps or do math"
+        field.placeholderString = "Search"
         field.isBordered = false
         field.drawsBackground = false
         field.focusRingType = .none
@@ -73,6 +77,7 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
                 height: Self.rowHeight
             ))
             row.onClick = { [weak self] in self?.activate(i) }
+            row.onMenu = { [weak self] in self?.menu(for: i) }
             rows.append(row)
             content.addSubview(row)
         }
@@ -144,7 +149,21 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         if let value = Calculator.evaluate(query) {
             results.append(.calculation(Calculator.format(value)))
         }
-        results += index.search(query, limit: Self.maxResults - results.count).map(Result.app)
+        let room = Self.maxResults - results.count
+        var apps = index.search(query, limit: room)[...]
+        var files = files.search(query, limit: room)[...]
+        // Apps first, unless a file that isn't named like a hash matches in a
+        // better tier.
+        while results.count < Self.maxResults, !apps.isEmpty || !files.isEmpty {
+            let fileFirst = files.first.map { file in
+                apps.first.map { !file.looksLikeHash && file.match.tier.rawValue > $0.match.tier.rawValue } ?? true
+            } ?? false
+            if fileFirst {
+                results.append(.file(files.removeFirst()))
+            } else {
+                results.append(.app(apps.removeFirst().app))
+            }
+        }
         selection = 0
 
         for (i, row) in rows.enumerated() {
@@ -153,6 +172,10 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
             switch results[i] {
             case .calculation(let value): row.show(title: value, icon: ResultRow.calculatorIcon)
             case .app(let app): row.show(title: app.name, icon: app.icon)
+            case .file(let file):
+                let folder = ((file.path as NSString).deletingLastPathComponent as NSString)
+                row.show(title: file.name, detail: folder.abbreviatingWithTildeInPath, icon: icon(for: file))
+                row.toolTip = file.path
             }
             row.isSelected = i == selection
         }
@@ -165,13 +188,21 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         panel.invalidateShadow()
     }
 
+    private func icon(for file: FoundFile) -> NSImage {
+        if let icon = icons.object(forKey: file.path as NSString) { return icon }
+        let icon = NSWorkspace.shared.icon(forFile: file.path)
+        icon.size = NSSize(width: 32, height: 32)
+        icons.setObject(icon, forKey: file.path as NSString)
+        return icon
+    }
+
     private func select(_ i: Int) {
         guard !results.isEmpty else { return }
         selection = min(max(i, 0), results.count - 1)
         for (i, row) in rows.enumerated() { row.isSelected = i == selection }
     }
 
-    // Opens the app, or copies the calculation's result.
+    // Opens the app or file, or copies the calculation's result.
     private func activate(_ i: Int) {
         guard results.indices.contains(i) else { return }
         hide()
@@ -183,7 +214,48 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
             index.recordLaunch(of: app)
             let configuration = NSWorkspace.OpenConfiguration()
             NSWorkspace.shared.openApplication(at: app.url, configuration: configuration)
+        case .file(let file):
+            files.recordOpen(file)
+            NSWorkspace.shared.open(URL(fileURLWithPath: file.path))
         }
+    }
+
+    // For a two-finger click on an app or file.
+    private func menu(for i: Int) -> NSMenu? {
+        guard results.indices.contains(i) else { return nil }
+        let url: URL
+        switch results[i] {
+        case .calculation: return nil
+        case .app(let app): url = app.url
+        case .file(let file): url = URL(fileURLWithPath: file.path)
+        }
+        select(i)
+        let menu = NSMenu()
+        for (title, action) in [
+            ("Copy File", #selector(copyFile(_:))),
+            ("Copy Path", #selector(copyPath(_:))),
+        ] {
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+            item.target = self
+            item.representedObject = url
+            menu.addItem(item)
+        }
+        return menu
+    }
+
+    // Pastes as the file itself in Finder, Mail and the like.
+    @objc private func copyFile(_ item: NSMenuItem) {
+        guard let url = item.representedObject as? URL else { return }
+        hide()
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.writeObjects([url as NSURL])
+    }
+
+    @objc private func copyPath(_ item: NSMenuItem) {
+        guard let url = item.representedObject as? URL else { return }
+        hide()
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(url.path, forType: .string)
     }
 
     func controlTextDidChange(_ notification: Notification) {
@@ -239,16 +311,19 @@ private final class ResultRow: NSView {
     )!.withSymbolConfiguration(.init(pointSize: 26, weight: .regular))!
 
     var onClick: (() -> Void)?
+    var onMenu: (() -> NSMenu?)?
     var isSelected = false {
         didSet {
             layer?.backgroundColor = isSelected ? NSColor.controlAccentColor.cgColor : nil
             title.textColor = isSelected ? .white : .labelColor
+            detail.textColor = isSelected ? .white.withAlphaComponent(0.75) : .secondaryLabelColor
             icon.contentTintColor = isSelected ? .white : .secondaryLabelColor
         }
     }
 
     private let icon = NSImageView()
     private let title = NSTextField(labelWithString: "")
+    private let detail = NSTextField(labelWithString: "")
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -256,23 +331,51 @@ private final class ResultRow: NSView {
         layer?.cornerRadius = 8
         icon.frame = NSRect(x: 8, y: bounds.midY - 16, width: 32, height: 32)
         icon.imageScaling = .scaleProportionallyUpOrDown
-        title.frame = NSRect(x: 50, y: bounds.midY - 11, width: bounds.width - 60, height: 22)
         title.font = .systemFont(ofSize: 17)
-        title.lineBreakMode = .byTruncatingTail
+        title.allowsDefaultTighteningForTruncation = true
+        detail.font = .systemFont(ofSize: 12)
+        detail.lineBreakMode = .byTruncatingHead
+        detail.allowsDefaultTighteningForTruncation = true
+        detail.textColor = .secondaryLabelColor
         addSubview(icon)
         addSubview(title)
+        addSubview(detail)
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
-    func show(title: String, icon: NSImage) {
+    // The detail, like a file's folder, goes under the title in smaller
+    // type. Long titles lose their middle, so a file's extension stays.
+    func show(title: String, detail: String? = nil, icon: NSImage) {
         self.title.stringValue = title
+        self.detail.stringValue = detail ?? ""
+        self.detail.isHidden = detail == nil
         self.icon.image = icon
+        toolTip = nil
+        let width = bounds.width - 60
+        if detail == nil {
+            self.title.lineBreakMode = .byTruncatingTail
+            self.title.frame = NSRect(x: 50, y: bounds.midY - 11, width: width, height: 22)
+        } else {
+            self.title.lineBreakMode = .byTruncatingMiddle
+            self.title.frame = NSRect(x: 50, y: bounds.midY - 2, width: width, height: 21)
+            self.detail.frame = NSRect(x: 50, y: bounds.midY - 18, width: width, height: 16)
+        }
     }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     override func mouseDown(with event: NSEvent) {
-        onClick?()
+        if event.modifierFlags.contains(.control) {
+            rightMouseDown(with: event)
+        } else {
+            onClick?()
+        }
+    }
+
+    // A two-finger or Control-click.
+    override func rightMouseDown(with event: NSEvent) {
+        guard let menu = onMenu?() else { return }
+        NSMenu.popUpContextMenu(menu, with: event, for: self)
     }
 }

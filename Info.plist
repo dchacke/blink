@@ -16,6 +16,12 @@
 	<string>0.1.2</string>
 	<key>CFBundleVersion</key>
 	<string>3</string>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>Blink searches the files in your Desktop folder.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>Blink searches the files in your Documents folder.</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>Blink searches the files in your Downloads folder.</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>LSUIElement</key>
