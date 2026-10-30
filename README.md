@@ -19,8 +19,10 @@ Press ⌘Space, type, hit Return.
 - Math supports `+ - * / % ^` (also `**`, `×`, `÷`), parentheses, `pi`, `e`,
   and `sqrt cbrt abs sin cos tan asin acos atan ln log log2 exp floor ceil
   round`. Return copies the result.
-- ↑/↓ select, Esc closes. Click an app or file with two fingers to copy the
-  file itself (to paste in Finder or Mail) or its path.
+- ↑/↓ select, Esc closes. ⌘Space again brings back your last search, with
+  the same result selected; just type to start a new one. Click an app or
+  file with two fingers to copy the file itself (to paste in Finder or Mail)
+  or its path.
 
 ## Benchmarks
 

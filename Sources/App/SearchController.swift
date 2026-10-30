@@ -8,6 +8,15 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
         case calculation(String)
         case app(App)
         case file(FoundFile)
+
+        // What stays the same across searches, to keep a result selected.
+        var id: String {
+            switch self {
+            case .calculation: "="
+            case .app(let app): app.url.path
+            case .file(let file): file.path
+            }
+        }
     }
 
     private static let width: CGFloat = 640
@@ -41,6 +50,12 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
 
     /// Builds the panel up front so the first ⌘Space is as fast as the rest.
     func prepare() {
+        // Passing .nonactivatingPanel to the initializer doesn't tell the
+        // window server the panel never activates Blink; setting it again
+        // does. Without that, the panel can't open over another app's full
+        // screen space, only on the desktop.
+        panel.styleMask.remove(.nonactivatingPanel)
+        panel.styleMask.insert(.nonactivatingPanel)
         panel.isFloatingPanel = true
         panel.level = .modalPanel
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
@@ -133,17 +148,21 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
             x: visible.midX - Self.width / 2,
             y: screen.frame.midY + 289
         )
-        field.stringValue = ""
-        update()
+        // Picks up where you left off: the last query, searched again in
+        // case files changed, with the same result selected. The query is
+        // selected, so typing replaces it.
+        update(keepingSelection: true)
         panel.makeKeyAndOrderFront(nil)
         panel.makeFirstResponder(field)
+        field.selectText(nil)
     }
 
     private func hide() {
         panel.orderOut(nil)
     }
 
-    private func update() {
+    private func update(keepingSelection: Bool = false) {
+        let selected = keepingSelection && results.indices.contains(selection) ? results[selection].id : nil
         let query = field.stringValue
         results = []
         if let value = Calculator.evaluate(query) {
@@ -164,7 +183,7 @@ final class SearchController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
                 results.append(.app(apps.removeFirst().app))
             }
         }
-        selection = 0
+        selection = selected.flatMap { id in results.firstIndex { $0.id == id } } ?? 0
 
         for (i, row) in rows.enumerated() {
             row.isHidden = i >= results.count
