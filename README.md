@@ -2,7 +2,7 @@
 
 # Blink
 
-A blazing-fast Spotlight replacement for apps, files and math. Press
+A blazing-fast Spotlight replacement for apps, files, and math. Press
 ⌘Space, type, hit Return.
 
 - Apps in the Applications folders are matched by prefix, word start
@@ -11,8 +11,8 @@ A blazing-fast Spotlight replacement for apps, files and math. Press
 - Files and folders are matched by name: prefix, word start, then substring,
   ignoring case and accents. Blink keeps every name in your home folder in
   memory and follows changes as they happen, so it doesn’t wait on
-  Spotlight’s index. It leaves out ~/Library, hidden files, node_modules and
-  the insides of packages like .app bundles. Files you open often rank
+  Spotlight’s index. It leaves out ~/Library, hidden files, node_modules,
+  and the insides of packages like .app bundles. Files you open often rank
   higher, and names that are mostly a hash or a UUID rank lower. Each file
   shows its folder under its name.
 - Math supports `+ - * / % ^` (also `**`, `×`, `÷`), parentheses, `pi`, `e`,
@@ -67,12 +67,12 @@ The whole app is 1.1 MB, 848 KB of which is its icon.
 3. Open Blink. It isn’t notarized by Apple, so macOS blocks it the first
    time: click Done, then go to System Settings → Privacy & Security and
    click Open Anyway.
-4. When macOS asks, allow Blink to access your Desktop, Documents and
-   Downloads folders so it can search the files in them.
+4. When macOS asks, allow Blink to access your Desktop, Documents,
+   and Downloads folders so it can search the files in them.
 
-That’s it. Blink runs in the background, with no window, Dock icon or menu
-bar icon, and it doesn’t show up in the ⌘Tab switcher. It quietly takes over
-⌘Space from Spotlight.
+That’s it. Blink runs in the background, with no window, Dock icon, or
+menu bar icon, and it doesn’t show up in the ⌘Tab switcher. It quietly
+takes over ⌘Space from Spotlight.
 
 Or build and install it yourself (needs the Xcode command line tools):
 
