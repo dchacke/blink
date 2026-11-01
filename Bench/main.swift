@@ -29,3 +29,12 @@ for expression in ["1+2", "sqrt(2) * (3 + 4)^2 / pi"] {
     let math = median(runs: 10001) { _ = Calculator.evaluate(expression).map(Calculator.format) }
     report("Math \"\(expression)\"", math, decimals: 4)
 }
+
+let files = FileIndex()
+let fileIndexing = median(runs: 3) { files.reload() }
+report("Indexing \(files.count) files", fileIndexing, decimals: 0)
+
+for query in ["r", "re", "rep", "report", "budget 2025", "xyzzy"] {
+    let search = median(runs: 101) { _ = files.search(query, limit: 8) }
+    report("File search \"\(query)\"", search, decimals: 3)
+}

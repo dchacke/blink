@@ -42,7 +42,7 @@ final class AppIndex {
         watch()
     }
 
-    func search(_ query: String, limit: Int) -> [App] {
+    func search(_ query: String, limit: Int) -> [(app: App, match: Match)] {
         let query = SearchQuery(query)
         return apps
             .compactMap { app in app.match(query).map { (app, $0) } }
@@ -55,7 +55,7 @@ final class AppIndex {
                 return a.0.name.localizedStandardCompare(b.0.name) == .orderedAscending
             }
             .prefix(limit)
-            .map(\.0)
+            .map { (app: $0.0, match: $0.1) }
     }
 
     func recordLaunch(of app: App) {

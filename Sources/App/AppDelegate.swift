@@ -4,11 +4,13 @@ import ServiceManagement
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let index = AppIndex()
-    private lazy var search = SearchController(index: index)
+    private let files = FileIndex()
+    private lazy var search = SearchController(index: index, files: files)
     private var hotKey: HotKey?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         index.start()
+        files.start()
         search.prepare()
         hotKey = HotKey(keyCode: kVK_Space, modifiers: cmdKey) { [weak self] in
             self?.search.toggle()
