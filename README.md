@@ -2,13 +2,12 @@
 
 # Blink
 
-A blazing-fast Spotlight replacement that does three things: open apps
-from the Applications folder, find files in your home folder and do math.
-Press ⌘Space, type, hit Return.
+A blazing-fast Spotlight replacement for apps, files and math. Press
+⌘Space, type, hit Return.
 
-- Apps are matched by prefix, word start (“notes” → Sticky Notes), initials
-  (“vsc” → Visual Studio Code), substring, then fuzzily. Apps you open often
-  rank higher.
+- Apps in the Applications folders are matched by prefix, word start
+  (“notes” → Sticky Notes), initials (“vsc” → Visual Studio Code),
+  substring, then fuzzily. Apps you open often rank higher.
 - Files and folders are matched by name: prefix, word start, then substring,
   ignoring case and accents. Blink keeps every name in your home folder in
   memory and follows changes as they happen, so it doesn’t wait on
@@ -53,10 +52,10 @@ From keystroke to results on screen, measured frame by frame in 60 fps
 screen recordings, Spotlight took 167–1,083 ms and Blink under 17 ms, within
 a single frame.
 
-All of these were measured on the repo owner’s Mac. Results on yours may
-vary.
+The file numbers were measured on a contributor’s Mac, the rest on the repo
+owner’s. Results on yours may vary.
 
-The whole app is 1 MB, 848 KB of which is its icon.
+The whole app is 1.1 MB, 848 KB of which is its icon.
 
 ## Install
 
