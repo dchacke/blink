@@ -546,7 +546,7 @@ private struct Storage {
         for (from, length) in [(start, count), (start + count, Int(e.foldedCount))] where length >= n {
             for offset in 0...(length - n) {
                 var equal = true
-                for j in 0..<n where lowercased(names[from + offset + j]) != query[j] {
+                for j in 0..<n where !matches(names[from + offset + j], query[j]) {
                     equal = false
                     break
                 }
@@ -619,6 +619,12 @@ private func isLetter(_ b: UInt8) -> Bool {
 
 private func lowercased(_ b: UInt8) -> UInt8 {
     b >= UInt8(ascii: "A") && b <= UInt8(ascii: "Z") ? b | 0x20 : b
+}
+
+// Whether a name's byte matches a query's. A space in the query also matches
+// a dash or an underscore.
+private func matches(_ b: UInt8, _ q: UInt8) -> Bool {
+    lowercased(b) == q || q == UInt8(ascii: " ") && (b == UInt8(ascii: "-") || b == UInt8(ascii: "_"))
 }
 
 private func isWordStart(_ previous: UInt8, _ current: UInt8) -> Bool {

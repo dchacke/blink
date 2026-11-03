@@ -15,6 +15,7 @@ import Testing
             "Documents/.hidden.txt",
             "Documents/Thing.app/Contents/Info.plist",
             "Documents/Unrelated.txt",
+            "Documents/tax_return.pdf",
             "Code/node_modules/report/index.js",
             "Library/report.plist",
             "Documents/report-9f86d081884c7d659a2feaa0c55ad015.json",
@@ -48,6 +49,8 @@ import Testing
         ("uber", "Über Notes.txt", .prefix),
         ("über", "Über Notes.txt", .prefix),
         ("work", "Work", .prefix),
+        ("report draft", "report-draft.txt", .prefix),
+        ("tax return", "tax_return.pdf", .prefix),
     ])
     func finds(query: String, name: String, tier: Match.Tier) throws {
         let found = try #require(index.search(query, limit: 8).first { $0.name == name })

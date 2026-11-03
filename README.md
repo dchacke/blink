@@ -9,8 +9,9 @@ A blazing-fast Spotlight replacement for apps, files, and math. Press
   (“notes” → Sticky Notes), initials (“vsc” → Visual Studio Code),
   substring, then fuzzily. Apps you open often rank higher.
 - Files and folders are matched by name: prefix, word start, then substring,
-  ignoring case and accents. Blink keeps every name in your home folder in
-  memory and follows changes as they happen, so it doesn’t wait on
+  ignoring case and accents. A space also matches a dash or an underscore
+  (“tax return” → tax_return.pdf). Blink keeps every name in your home
+  folder in memory and follows changes as they happen, so it doesn’t wait on
   Spotlight’s index. It leaves out ~/Library, hidden files, node_modules,
   and the insides of packages like .app bundles. Files you open often rank
   higher, and names that are mostly a hash or a UUID rank lower. Each file
